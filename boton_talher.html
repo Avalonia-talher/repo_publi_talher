@@ -36,7 +36,7 @@
             const contenedor = document.getElementById('lineas-list');
             contenedor.innerHTML = '';
             lineas
-                .filter(l => l.name.toLowerCase().startsWith(filtro.toLowerCase()))
+                .filter(l => l.name.toLowerCase().includes(filtro.toLowerCase()))
                 .forEach((l, idx) => {
                     const display = l.name === l.label ? l.name : `${l.name} / ${l.label}`;
                     contenedor.innerHTML += `
