@@ -2,175 +2,99 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <meta charset="UTF-8">
-    <title>Selección de Líneas</title>
-    <style>
-        body {
-            font-family: "Segoe UI", Arial, sans-serif;
-            background-color: #f4f6fa;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            margin: 0;
-            padding: 40px 10px;
-        }
-
-        h2 {
-            text-align: center;
-            color: #333;
-            margin-bottom: 20px;
-        }
-
-        #contenedor {
-            background: #fff;
-            border-radius: 16px;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.15);
-            padding: 30px;
-            width: 90%;
-            max-width: 700px;
-        }
-
-        #buscador {
-            width: 100%;
-            padding: 10px 14px;
-            margin-bottom: 16px;
-            border: 1px solid #ccc;
-            border-radius: 8px;
-            font-size: 16px;
-        }
-
-        #lineas-list {
-            max-height: 400px;
-            overflow-y: auto;
-            border: 1px solid #ddd;
-            border-radius: 8px;
-            padding: 10px;
-            background: #fafafa;
-        }
-
-        .linea-row {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 6px 10px;
-            margin-bottom: 4px;
-            border-radius: 8px;
-            transition: background 0.2s;
-        }
-
-        .linea-row:hover {
-            background: #e8f0fe;
-        }
-
-        .linea-label {
-            flex-grow: 1;
-            margin-left: 8px;
-            font-size: 15px;
-            color: #333;
-        }
-
-        .foto-select {
-            margin-left: 10px;
-            padding: 4px 8px;
-            border-radius: 6px;
-            border: 1px solid #aaa;
-        }
-
-        button {
-            margin-top: 20px;
-            width: 100%;
-            padding: 12px;
-            font-size: 16px;
-            background-color: #007bff;
-            color: white;
-            border: none;
-            border-radius: 8px;
-            cursor: pointer;
-            transition: background 0.3s;
-        }
-
-        button:hover {
-            background-color: #0056b3;
-        }
-    </style>
+<meta charset="UTF-8">
+<title>Solicitud de Informe</title>
+<style>
+  body { font-family: Arial, sans-serif; margin: 20px; }
+  .linea-input { margin-bottom: 10px; }
+  .warning { color: red; font-weight: bold; margin-bottom: 10px; }
+  label { display: block; margin-top: 5px; }
+</style>
 </head>
 <body>
-    <div id="contenedor">
-        <h2>Selecciona líneas y tipo de foto</h2>
-        <input type="text" id="buscador" placeholder="Buscar línea...">
-        <div id="lineas-list"></div>
-        <button onclick="enviarSeleccion()">Enviar selección</button>
-    </div>
 
-    <script>
-        // 📋 Lista de líneas embebida (copiada del CSV)
-        const lineas = [
-            { name: ".FERIAL",label:".FERIAL"},
-            { name: "3000_VIV_5",label:"3000_VIV_5"},
-            { name: "4_CAMINOS",label:"4_CAMINOS"},
-            { name: "ZONA_SUR",label:"ZONA_SUR"},
-            { name: "ZUJAR",label:"ZUJAR"}
-        ];
+<h2>Solicitud de Informe</h2>
+<p>Ingrese la cantidad de líneas para las que desea solicitar informe:</p>
+<input type="number" id="numLineas" min="1" max="10" value="1">
+<button onclick="generarCampos()">Generar campos</button>
 
-        // Muestra las líneas en el contenedor
-        function mostrarLineas(filtro) {
-            const contenedor = document.getElementById('lineas-list');
-            contenedor.innerHTML = '';
+<div id="lineasContainer"></div>
 
-            lineas
-                .filter(l => l.name.toLowerCase().includes(filtro.toLowerCase()))
-                .forEach((l, idx) => {
-                    const display = l.name === l.label ? l.name : `${l.name} / ${l.label}`;
-                    contenedor.innerHTML += `
-                        <div class="linea-row">
-                            <input type="checkbox" id="linea_${idx}" onchange="toggleFotoSelect(${idx})">
-                            <span class="linea-label">${display}</span>
-                            <select class="foto-select" id="foto_${idx}" style="display:none;">
-                                <option value="prim">Primera foto</option>
-                                <option value="ult">Última foto</option>
-                            </select>
-                        </div>
-                    `;
-                });
+<h3>Diccionario de líneas (ejemplo)</h3>
+<ul>
+  <li>Línea A</li>
+  <li>Línea B</li>
+  <li>Línea C</li>
+  <li>Línea D</li>
+</ul>
+
+<button onclick="enviar()">Enviar solicitud</button>
+
+<script>
+function generarCampos() {
+    const container = document.getElementById('lineasContainer');
+    container.innerHTML = ''; // limpiar campos previos
+    const num = parseInt(document.getElementById('numLineas').value);
+
+    for (let i = 1; i <= num; i++) {
+        const div = document.createElement('div');
+        div.className = 'linea-input';
+
+        const warning = document.createElement('p');
+        warning.className = 'warning';
+        warning.textContent = `¡Es muy importante indicar correctamente el nombre de la línea! Revíselo en el diccionario.`;
+        div.appendChild(warning);
+
+        const labelNombre = document.createElement('label');
+        labelNombre.textContent = `Nombre de la línea ${i}:`;
+        const inputNombre = document.createElement('input');
+        inputNombre.type = 'text';
+        inputNombre.name = `linea${i}`;
+        inputNombre.placeholder = 'Ej: Línea A';
+        div.appendChild(labelNombre);
+        div.appendChild(inputNombre);
+
+        const labelFoto = document.createElement('label');
+        labelFoto.textContent = `Seleccionar foto:`;
+        const selectFoto = document.createElement('select');
+        selectFoto.name = `foto${i}`;
+        const option1 = document.createElement('option');
+        option1.value = 'primera';
+        option1.textContent = 'Primera';
+        const option2 = document.createElement('option');
+        option2.value = 'ultima';
+        option2.textContent = 'Última';
+        selectFoto.appendChild(option1);
+        selectFoto.appendChild(option2);
+
+        div.appendChild(labelFoto);
+        div.appendChild(selectFoto);
+
+        container.appendChild(div);
+    }
+}
+
+function enviar() {
+    const num = parseInt(document.getElementById('numLineas').value);
+    const resultados = [];
+
+    for (let i = 1; i <= num; i++) {
+        const nombre = document.querySelector(`input[name="linea${i}"]`).value.trim();
+        const foto = document.querySelector(`select[name="foto${i}"]`).value;
+        if (!nombre) {
+            alert(`Debe indicar el nombre de la línea ${i}`);
+            return;
         }
+        resultados.push({ nombre, foto });
+    }
 
-        // Mostrar todo al inicio
-        mostrarLineas('');
+    // Aquí iría la llamada a tu proxy de Netlify para disparar el workflow
+    console.log('Datos a enviar:', resultados);
+    alert('Solicitud preparada. Revise la consola para ver los datos.');
+}
+</script>
 
-        // Filtro en vivo
-        document.getElementById('buscador').addEventListener('input', function() {
-            mostrarLineas(this.value);
-        });
-
-        // Mostrar select de foto al marcar la línea
-        function toggleFotoSelect(idx) {
-            const cb = document.getElementById(`linea_${idx}`);
-            const sel = document.getElementById(`foto_${idx}`);
-            sel.style.display = cb.checked ? 'inline-block' : 'none';
-        }
-
-        // Mostrar la selección
-        function enviarSeleccion() {
-            const seleccion = [];
-            lineas.forEach((l, idx) => {
-                const cb = document.getElementById(`linea_${idx}`);
-                const sel = document.getElementById(`foto_${idx}`);
-                if (cb && cb.checked) {
-                    seleccion.push({
-                        name: l.name,
-                        label: l.label,
-                        foto_posicion: sel.value
-                    });
-                }
-            });
-
-            if (seleccion.length === 0) {
-                alert("No has seleccionado ninguna línea.");
-            } else {
-                alert('Selección:\n' + JSON.stringify(seleccion, null, 2));
-            }
-        }
-    </script>
 </body>
 </html>
+
 
