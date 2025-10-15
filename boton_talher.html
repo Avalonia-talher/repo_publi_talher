@@ -1,47 +1,138 @@
-<!-- HTML para selección de líneas y foto_posicion -->
+
+<!-- HTML para selección de líneas y tipo de foto -->
 <!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
     <title>Selección de Líneas</title>
     <style>
-        body { font-family: Arial, sans-serif; }
-        .linea-row { display: flex; align-items: center; margin-bottom: 4px; }
-        .linea-label { min-width: 250px; }
-        .foto-select { margin-left: 10px; }
+        body {
+            font-family: "Segoe UI", Arial, sans-serif;
+            background-color: #f4f6fa;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin: 0;
+            padding: 40px 10px;
+        }
+
+        h2 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 20px;
+        }
+
+        #contenedor {
+            background: #fff;
+            border-radius: 16px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+            padding: 30px;
+            width: 90%;
+            max-width: 700px;
+        }
+
+        #buscador {
+            width: 100%;
+            padding: 10px 14px;
+            margin-bottom: 16px;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            font-size: 16px;
+        }
+
+        #lineas-list {
+            max-height: 400px;
+            overflow-y: auto;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 10px;
+            background: #fafafa;
+        }
+
+        .linea-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 6px 10px;
+            margin-bottom: 4px;
+            border-radius: 8px;
+            transition: background 0.2s;
+        }
+
+        .linea-row:hover {
+            background: #e8f0fe;
+        }
+
+        .linea-label {
+            flex-grow: 1;
+            margin-left: 8px;
+            font-size: 15px;
+            color: #333;
+        }
+
+        .foto-select {
+            margin-left: 10px;
+            padding: 4px 8px;
+            border-radius: 6px;
+            border: 1px solid #aaa;
+        }
+
+        button {
+            margin-top: 20px;
+            width: 100%;
+            padding: 12px;
+            font-size: 16px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+
+        button:hover {
+            background-color: #0056b3;
+        }
     </style>
 </head>
 <body>
-    <h2>Selecciona líneas y tipo de foto</h2>
-    <input type="text" id="buscador" placeholder="Buscar línea...">
-    <div id="lineas-list"></div>
-    <button onclick="enviarSeleccion()">Enviar selección</button>
+    <div id="contenedor">
+        <h2>Selecciona líneas y tipo de foto</h2>
+        <input type="text" id="buscador" placeholder="Buscar línea...">
+        <div id="lineas-list"></div>
+        <button onclick="enviarSeleccion()">Enviar selección</button>
+    </div>
 
     <script>
         let lineas = [];
 
-        // Cargar el archivo CSV 
-        fetch('https://api.allorigins.win/raw?url=' + encodeURIComponent('https://raw.githubusercontent.com/Avalonia-talher/repo_publi_talher/main/LINEAS.csv'))
+        // Cargar el archivo CSV desde GitHub RAW
+        fetch('https://raw.githubusercontent.com/Avalonia-talher/repo_publi_talher/main/LINEAS.csv')
             .then(response => response.text())
             .then(data => {
                 lineas = data.trim().split('\n').map(row => {
                     const [name, label] = row.split(',');
-                    return { name, label };
+                    return { name: name.trim(), label: (label || '').trim() };
                 });
                 mostrarLineas('');
+            })
+            .catch(err => {
+                console.error("Error al cargar el CSV:", err);
+                document.getElementById('lineas-list').innerHTML = "<p style='color:red;'>Error al cargar LINEAS.csv</p>";
             });
 
-        // Filtrar y mostrar líneas
+        // Mostrar líneas con o sin filtro
         function mostrarLineas(filtro) {
             const contenedor = document.getElementById('lineas-list');
             contenedor.innerHTML = '';
+
             lineas
                 .filter(l => l.name.toLowerCase().includes(filtro.toLowerCase()))
                 .forEach((l, idx) => {
                     const display = l.name === l.label ? l.name : `${l.name} / ${l.label}`;
                     contenedor.innerHTML += `
                         <div class="linea-row">
-                            <input type="checkbox" id="linea_${idx}" data-name="${l.name}" data-label="${l.label}" onchange="toggleFotoSelect(${idx})">
+                            <input type="checkbox" id="linea_${idx}" onchange="toggleFotoSelect(${idx})">
                             <span class="linea-label">${display}</span>
                             <select class="foto-select" id="foto_${idx}" style="display:none;">
                                 <option value="prim">Primera foto</option>
@@ -52,34 +143,38 @@
                 });
         }
 
-        // Buscador
+        // Buscador en vivo
         document.getElementById('buscador').addEventListener('input', function() {
             mostrarLineas(this.value);
         });
 
-        // Mostrar select de foto solo si está seleccionada la línea
+        // Mostrar/ocultar selector de foto según checkbox
         function toggleFotoSelect(idx) {
             const cb = document.getElementById(`linea_${idx}`);
             const sel = document.getElementById(`foto_${idx}`);
-            sel.style.display = cb.checked ? 'inline-block' : 'none';
+            if (cb && sel) sel.style.display = cb.checked ? 'inline-block' : 'none';
         }
 
-        // Recoger selección y mostrar (puedes adaptar para enviar por fetch/Netlify)
+        // Recoger selección y mostrar
         function enviarSeleccion() {
             const seleccion = [];
             lineas.forEach((l, idx) => {
                 const cb = document.getElementById(`linea_${idx}`);
-                if (cb && cb.checked) {
-                    const foto = document.getElementById(`foto_${idx}`).value;
+                const sel = document.getElementById(`foto_${idx}`);
+                if (cb && cb.checked && sel) {
                     seleccion.push({
                         name: l.name,
                         label: l.label,
-                        foto_posicion: foto
+                        foto_posicion: sel.value
                     });
                 }
             });
-            alert('Selección:\n' + JSON.stringify(seleccion, null, 2));
-            // Aquí puedes enviar la selección por fetch a tu backend/Netlify Function
+
+            if (seleccion.length === 0) {
+                alert("No has seleccionado ninguna línea.");
+            } else {
+                alert('Selección:\n' + JSON.stringify(seleccion, null, 2));
+            }
         }
     </script>
 </body>
