@@ -21,7 +21,7 @@
         let lineas = [];
 
         // Cargar el archivo CSV 
-        fetch('https://raw.githubusercontent.com/Avalonia-talher/repo_publi_talher/main/LINEAS.csv')
+        fetch('https://api.allorigins.win/raw?url=' + encodeURIComponent('https://raw.githubusercontent.com/Avalonia-talher/repo_publi_talher/main/LINEAS.csv'))
             .then(response => response.text())
             .then(data => {
                 lineas = data.trim().split('\n').map(row => {
