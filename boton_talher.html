@@ -1,4 +1,5 @@
 
+
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -69,9 +70,19 @@
     cursor: pointer;
   }
 
-  #enviarBtn:hover {
-    background-color: #45a049;
+  #enviarBtn:disabled {
+    background-color: #9E9E9E;
+    cursor: not-allowed;
   }
+
+  #estado {
+    margin-top: 15px;
+    font-weight: bold;
+    font-size: 16px;
+  }
+
+  #estado.success { color: green; }
+  #estado.error { color: red; }
 </style>
 </head>
 <body>
@@ -85,11 +96,13 @@
 <div id="lineasContainer"></div>
 
 <button id="enviarBtn" onclick="enviar()">Enviar solicitud</button>
+<div id="estado"></div>
 
 <script>
 function generarCampos() {
     const container = document.getElementById('lineasContainer');
     container.innerHTML = ''; // limpiar campos previos
+    document.getElementById('estado').textContent = ''; // limpiar estado
     const num = parseInt(document.getElementById('numLineas').value);
 
     for (let i = 1; i <= num; i++) {
@@ -130,7 +143,9 @@ function generarCampos() {
     }
 }
 
-function enviar() {
+async function enviar() {
+    const estadoDiv = document.getElementById('estado');
+    const enviarBtn = document.getElementById('enviarBtn');
     const num = parseInt(document.getElementById('numLineas').value);
     const resultados = [];
 
@@ -138,15 +153,40 @@ function enviar() {
         const nombre = document.querySelector(`input[name="linea${i}"]`).value.trim();
         const foto = document.querySelector(`select[name="foto${i}"]`).value;
         if (!nombre) {
-            alert(`Debe indicar el nombre de la línea ${i}`);
+            estadoDiv.textContent = `Debe indicar el nombre de la línea ${i}`;
+            estadoDiv.className = 'error';
             return;
         }
         resultados.push({ nombre, foto });
     }
 
-    // Aquí iría la llamada a tu proxy de Netlify para disparar el workflow
-    console.log('Datos a enviar:', resultados);
-    alert('Solicitud preparada. Revise la consola para ver los datos.');
+    enviarBtn.disabled = true;
+    estadoDiv.textContent = 'Enviando solicitud...';
+    estadoDiv.className = '';
+
+    try {
+        // Simulación de envío a Netlify
+        await fakeEnvio(resultados); // reemplazar con tu fetch real
+
+        estadoDiv.textContent = 'Solicitud enviada correctamente ✅';
+        estadoDiv.className = 'success';
+    } catch (error) {
+        estadoDiv.textContent = 'Error al enviar la solicitud ❌';
+        estadoDiv.className = 'error';
+    } finally {
+        enviarBtn.disabled = false;
+    }
+}
+
+// Función simulada de envío, reemplazar con tu fetch a Netlify
+function fakeEnvio(data) {
+    return new Promise((resolve, reject) => {
+        setTimeout(() => {
+            // Simula éxito o fallo aleatorio
+            if (Math.random() > 0.1) resolve(true);
+            else reject('Error simulado');
+        }, 1000);
+    });
 }
 </script>
 
