@@ -1,1 +1,86 @@
+<!-- HTML para selección de líneas y foto_posicion -->
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Selección de Líneas</title>
+    <style>
+        body { font-family: Arial, sans-serif; }
+        .linea-row { display: flex; align-items: center; margin-bottom: 4px; }
+        .linea-label { min-width: 250px; }
+        .foto-select { margin-left: 10px; }
+    </style>
+</head>
+<body>
+    <h2>Selecciona líneas y tipo de foto</h2>
+    <input type="text" id="buscador" placeholder="Buscar línea...">
+    <div id="lineas-list"></div>
+    <button onclick="enviarSeleccion()">Enviar selección</button>
 
+    <script>
+        let lineas = [];
+
+        // Cargar el archivo CSV (LINEAS.py)
+        fetch('LINEAS.py')
+            .then(response => response.text())
+            .then(data => {
+                lineas = data.trim().split('\n').map(row => {
+                    const [name, label] = row.split('\t');
+                    return { name, label };
+                });
+                mostrarLineas('');
+            });
+
+        // Filtrar y mostrar líneas
+        function mostrarLineas(filtro) {
+            const contenedor = document.getElementById('lineas-list');
+            contenedor.innerHTML = '';
+            lineas
+                .filter(l => l.name.toLowerCase().startsWith(filtro.toLowerCase()))
+                .forEach((l, idx) => {
+                    const display = l.name === l.label ? l.name : `${l.name} / ${l.label}`;
+                    contenedor.innerHTML += `
+                        <div class="linea-row">
+                            <input type="checkbox" id="linea_${idx}" data-name="${l.name}" data-label="${l.label}" onchange="toggleFotoSelect(${idx})">
+                            <span class="linea-label">${display}</span>
+                            <select class="foto-select" id="foto_${idx}" style="display:none;">
+                                <option value="prim">Primera foto</option>
+                                <option value="ult">Última foto</option>
+                            </select>
+                        </div>
+                    `;
+                });
+        }
+
+        // Buscador
+        document.getElementById('buscador').addEventListener('input', function() {
+            mostrarLineas(this.value);
+        });
+
+        // Mostrar select de foto solo si está seleccionada la línea
+        function toggleFotoSelect(idx) {
+            const cb = document.getElementById(`linea_${idx}`);
+            const sel = document.getElementById(`foto_${idx}`);
+            sel.style.display = cb.checked ? 'inline-block' : 'none';
+        }
+
+        // Recoger selección y mostrar (puedes adaptar para enviar por fetch/Netlify)
+        function enviarSeleccion() {
+            const seleccion = [];
+            lineas.forEach((l, idx) => {
+                const cb = document.getElementById(`linea_${idx}`);
+                if (cb && cb.checked) {
+                    const foto = document.getElementById(`foto_${idx}`).value;
+                    seleccion.push({
+                        name: l.name,
+                        label: l.label,
+                        foto_posicion: foto
+                    });
+                }
+            });
+            alert('Selección:\n' + JSON.stringify(seleccion, null, 2));
+            // Aquí puedes enviar la selección por fetch a tu backend/Netlify Function
+        }
+    </script>
+</body>
+</html>
