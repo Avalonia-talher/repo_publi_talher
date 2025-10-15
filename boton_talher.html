@@ -21,11 +21,11 @@
         let lineas = [];
 
         // Cargar el archivo CSV 
-        fetch('LINEAS.csv')
+        fetch('https://raw.githubusercontent.com/Avalonia-talher/repo_publi_talher/main/LINEAS.csv')
             .then(response => response.text())
             .then(data => {
                 lineas = data.trim().split('\n').map(row => {
-                    const [name, label] = row.split('\t');
+                    const [name, label] = row.split(',');
                     return { name, label };
                 });
                 mostrarLineas('');
