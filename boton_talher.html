@@ -1,6 +1,6 @@
 
-
 <!DOCTYPE html>
+
 <html lang="es">
 <head>
 <meta charset="UTF-8">
@@ -12,78 +12,78 @@
     margin: 20px; 
   }
 
-  h2 { color: #333; }
+h2 { color: #333; }
 
-  #numLineas, button {
-    font-size: 18px;
-    padding: 8px 12px;
-    margin-right: 10px;
-  }
+#numLineas, button {
+font-size: 18px;
+padding: 8px 12px;
+margin-right: 10px;
+}
 
-  .linea-input {
-    background-color: #fff;
-    border: 2px solid #4CAF50;
-    border-radius: 10px;
-    padding: 15px;
-    margin-bottom: 15px;
-    box-shadow: 2px 2px 8px rgba(0,0,0,0.1);
-  }
+.linea-input {
+background-color: #fff;
+border: 2px solid #4CAF50;
+border-radius: 10px;
+padding: 15px;
+margin-bottom: 15px;
+box-shadow: 2px 2px 8px rgba(0,0,0,0.1);
+}
 
-  .linea-input label {
-    display: block;
-    font-weight: bold;
-    margin-top: 10px;
-    font-size: 16px;
-  }
+.linea-input label {
+display: block;
+font-weight: bold;
+margin-top: 10px;
+font-size: 16px;
+}
 
-  .linea-input input[type="text"], 
-  .linea-input select {
-    font-size: 16px;
-    padding: 8px;
-    width: 100%;
-    margin-top: 5px;
-    border-radius: 5px;
-    border: 1px solid #ccc;
-    box-sizing: border-box;
-  }
+.linea-input input[type="text"],
+.linea-input select {
+font-size: 16px;
+padding: 8px;
+width: 100%;
+margin-top: 5px;
+border-radius: 5px;
+border: 1px solid #ccc;
+box-sizing: border-box;
+}
 
-  .warning {
-    color: #d8000c;
-    background-color: #ffbaba;
-    padding: 8px;
-    border-radius: 5px;
-    font-weight: bold;
-    margin-bottom: 10px;
-  }
+.warning {
+color: #d8000c;
+background-color: #ffbaba;
+padding: 8px;
+border-radius: 5px;
+font-weight: bold;
+margin-bottom: 10px;
+}
 
-  #lineasContainer {
-    margin-top: 20px;
-  }
+#lineasContainer {
+margin-top: 20px;
+}
 
-  #enviarBtn {
-    font-size: 18px;
-    padding: 10px 15px;
-    background-color: #4CAF50;
-    color: white;
-    border: none;
-    border-radius: 8px;
-    cursor: pointer;
-  }
+#enviarBtn {
+font-size: 18px;
+padding: 10px 15px;
+background-color: #4CAF50;
+color: white;
+border: none;
+border-radius: 8px;
+cursor: pointer;
+}
 
-  #enviarBtn:disabled {
-    background-color: #9E9E9E;
-    cursor: not-allowed;
-  }
+#enviarBtn:disabled {
+background-color: #9E9E9E;
+cursor: not-allowed;
+}
 
-  #estado {
-    margin-top: 15px;
-    font-weight: bold;
-    font-size: 16px;
-  }
+#estado {
+margin-top: 15px;
+font-weight: bold;
+font-size: 16px;
+}
 
-  #estado.success { color: green; }
-  #estado.error { color: red; }
-</style>
+#estado.success { color: green; }
+#estado.error { color: red; } </style>
+
 </head>
 <body>
 
@@ -96,13 +96,14 @@
 <div id="lineasContainer"></div>
 
 <button id="enviarBtn" onclick="enviar()">Enviar solicitud</button>
+
 <div id="estado"></div>
 
 <script>
 function generarCampos() {
     const container = document.getElementById('lineasContainer');
-    container.innerHTML = ''; // limpiar campos previos
-    document.getElementById('estado').textContent = ''; // limpiar estado
+    container.innerHTML = '';
+    document.getElementById('estado').textContent = '';
     const num = parseInt(document.getElementById('numLineas').value);
 
     for (let i = 1; i <= num; i++) {
@@ -165,28 +166,27 @@ async function enviar() {
     estadoDiv.className = '';
 
     try {
-        // Simulación de envío a Netlify
-        await fakeEnvio(resultados); // reemplazar con tu fetch real
+        const response = await fetch('/.netlify/functions/Talher_function', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ lineas: resultados })
+        });
 
-        estadoDiv.textContent = 'Solicitud enviada correctamente ✅';
-        estadoDiv.className = 'success';
+        const result = await response.json();
+
+        if (result.success) {
+            estadoDiv.textContent = result.message || 'Solicitud enviada correctamente ✅';
+            estadoDiv.className = 'success';
+        } else {
+            throw new Error(result.message || 'Error en la solicitud');
+        }
     } catch (error) {
         estadoDiv.textContent = 'Error al enviar la solicitud ❌';
         estadoDiv.className = 'error';
+        console.error(error);
     } finally {
         enviarBtn.disabled = false;
     }
-}
-
-// Función simulada de envío, reemplazar con tu fetch a Netlify
-function fakeEnvio(data) {
-    return new Promise((resolve, reject) => {
-        setTimeout(() => {
-            // Simula éxito o fallo aleatorio
-            if (Math.random() > 0.1) resolve(true);
-            else reject('Error simulado');
-        }, 1000);
-    });
 }
 </script>
 
