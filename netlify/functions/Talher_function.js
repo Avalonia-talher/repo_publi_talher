@@ -1,1 +1,140 @@
 
+/**
+
+* Netlify Function: Talher_function.js
+* Repositorios implicados:
+* * Público:  Avalonia-talher/repo_publi_talher
+* * Privado:  Avalonia-talher/repo_priv_talher (.github/workflows/Talher_WFW.yml)
+*
+* Variables de entorno requeridas en Netlify:
+* * PRIV_TOKEN : Token de GitHub con permisos de escritura en ambos repos
+    */
+
+exports.handler = async function (event, context) {
+try {
+if (event.httpMethod !== "POST") {
+return { statusCode: 405, body: "Método no permitido" };
+}
+
+```
+const token = process.env.PRIV_TOKEN;
+if (!token) {
+  return { statusCode: 500, body: "Falta el token PRIV_TOKEN en Netlify." };
+}
+
+const data = JSON.parse(event.body);
+
+if (!data.lineas || !Array.isArray(data.lineas) || data.lineas.length === 0) {
+  return { statusCode: 400, body: "No se proporcionaron líneas válidas." };
+}
+
+// ========================
+// 1️⃣ Registrar solicitudes
+// ========================
+const publicRepo = "Avalonia-talher/repo_publi_talher";
+const registroPath = "registro.json";
+const registroUrl = `https://api.github.com/repos/${publicRepo}/contents/${registroPath}`;
+
+// Obtener contenido actual del registro (si existe)
+const getRes = await fetch(registroUrl, {
+  headers: { Authorization: `Bearer ${token}`, Accept: "application/vnd.github+json" },
+});
+
+let registroActual = [];
+let sha = null;
+
+if (getRes.ok) {
+  const contenido = await getRes.json();
+  sha = contenido.sha;
+  const decoded = Buffer.from(contenido.content, "base64").toString("utf-8");
+  registroActual = JSON.parse(decoded);
+} else if (getRes.status === 404) {
+  registroActual = [];
+} else {
+  throw new Error("No se pudo leer registro.json: " + getRes.status);
+}
+
+// Obtener hora local de España
+const fecha = new Date().toLocaleString("es-ES", { timeZone: "Europe/Madrid" });
+
+// Agregar nuevas solicitudes
+const nuevasEntradas = data.lineas.map((l) => ({
+  linea: l.nombre,
+  foto: l.foto,
+  fecha: fecha,
+}));
+
+const actualizado = [...registroActual, ...nuevasEntradas];
+const contenidoBase64 = Buffer.from(JSON.stringify(actualizado, null, 2)).toString("base64");
+
+// Guardar cambios en el repo público
+const putRes = await fetch(registroUrl, {
+  method: "PUT",
+  headers: {
+    Authorization: `Bearer ${token}`,
+    "Content-Type": "application/json",
+    Accept: "application/vnd.github+json",
+  },
+  body: JSON.stringify({
+    message: `Registro de ${nuevasEntradas.length} solicitudes (${fecha})`,
+    content: contenidoBase64,
+    sha: sha || undefined,
+  }),
+});
+
+if (!putRes.ok) {
+  const text = await putRes.text();
+  throw new Error("Error al guardar registro.json: " + text);
+}
+
+// ==========================
+// 2️⃣ Activar workflow GitHub
+// ==========================
+const privateRepo = "Avalonia-talher/repo_priv_talher";
+const workflowId = "Talher_WFW.yml";
+const workflowUrl = `https://api.github.com/repos/${privateRepo}/actions/workflows/${workflowId}/dispatches`;
+
+const workflowPayload = {
+  ref: "main",
+  inputs: {
+    solicitudes: JSON.stringify(data.lineas),
+  },
+};
+
+const wfRes = await fetch(workflowUrl, {
+  method: "POST",
+  headers: {
+    Authorization: `Bearer ${token}`,
+    Accept: "application/vnd.github+json",
+    "Content-Type": "application/json",
+  },
+  body: JSON.stringify(workflowPayload),
+});
+
+if (!wfRes.ok) {
+  const text = await wfRes.text();
+  throw new Error("Error al activar el workflow: " + text);
+}
+
+// ======================
+// 3️⃣ Respuesta al HTML
+// ======================
+return {
+  statusCode: 200,
+  body: JSON.stringify({
+    success: true,
+    message: "Solicitudes enviadas correctamente y workflow activado.",
+    nuevasEntradas,
+  }),
+};
+```
+
+} catch (err) {
+console.error("Error en Talher_function:", err);
+return {
+statusCode: 500,
+body: JSON.stringify({ success: false, message: err.message }),
+};
+}
+};
+
