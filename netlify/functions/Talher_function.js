@@ -3,14 +3,14 @@
 
 * Netlify Function: Talher_function.js
 * Repositorios implicados:
-* * Público:  Avalonia-talher/repo_publi_talher
-* * Privado:  Avalonia-talher/repo_priv_talher (.github/workflows/Talher_WFW.yml)
+* * Público:  Avalonia-talher/repo_publi_talher  (registro de solicitudes)
+* * Privado:  Avalonia-talher/repo_priv_talher   (.github/workflows/Talher_WFW.yml)
 *
-* Variables de entorno requeridas en Netlify:
-* * PRIV_TOKEN : Token de GitHub con permisos de escritura en ambos repos
+* Variable de entorno requerida en Netlify:
+* * PRIV_TOKEN : Token de GitHub con permisos de lectura/escritura en ambos repos
     */
 
-exports.handler = async function (event, context) {
+export async function handler(event) {
 try {
 if (event.httpMethod !== "POST") {
 return { statusCode: 405, body: "Método no permitido" };
@@ -19,7 +19,7 @@ return { statusCode: 405, body: "Método no permitido" };
 ```
 const token = process.env.PRIV_TOKEN;
 if (!token) {
-  return { statusCode: 500, body: "Falta el token PRIV_TOKEN en Netlify." };
+  return { statusCode: 500, body: "Falta la variable PRIV_TOKEN en Netlify." };
 }
 
 const data = JSON.parse(event.body);
@@ -35,9 +35,12 @@ const publicRepo = "Avalonia-talher/repo_publi_talher";
 const registroPath = "registro.json";
 const registroUrl = `https://api.github.com/repos/${publicRepo}/contents/${registroPath}`;
 
-// Obtener contenido actual del registro (si existe)
+// Obtener contenido actual (si existe)
 const getRes = await fetch(registroUrl, {
-  headers: { Authorization: `Bearer ${token}`, Accept: "application/vnd.github+json" },
+  headers: {
+    Authorization: `Bearer ${token}`,
+    Accept: "application/vnd.github+json",
+  },
 });
 
 let registroActual = [];
@@ -48,26 +51,21 @@ if (getRes.ok) {
   sha = contenido.sha;
   const decoded = Buffer.from(contenido.content, "base64").toString("utf-8");
   registroActual = JSON.parse(decoded);
-} else if (getRes.status === 404) {
-  registroActual = [];
-} else {
-  throw new Error("No se pudo leer registro.json: " + getRes.status);
+} else if (getRes.status !== 404) {
+  throw new Error(`Error al leer registro.json: ${getRes.status}`);
 }
 
-// Obtener hora local de España
 const fecha = new Date().toLocaleString("es-ES", { timeZone: "Europe/Madrid" });
-
-// Agregar nuevas solicitudes
 const nuevasEntradas = data.lineas.map((l) => ({
   linea: l.nombre,
   foto: l.foto,
-  fecha: fecha,
+  fecha,
 }));
 
 const actualizado = [...registroActual, ...nuevasEntradas];
 const contenidoBase64 = Buffer.from(JSON.stringify(actualizado, null, 2)).toString("base64");
 
-// Guardar cambios en el repo público
+// Subir registro actualizado
 const putRes = await fetch(registroUrl, {
   method: "PUT",
   headers: {
@@ -91,29 +89,36 @@ if (!putRes.ok) {
 // 2️⃣ Activar workflow GitHub
 // ==========================
 const privateRepo = "Avalonia-talher/repo_priv_talher";
-const workflowId = "Talher_WFW.yml";
+const workflowId = "Talher_WFW.yml"; // asegúrate que coincida exactamente con tu archivo YAML
 const workflowUrl = `https://api.github.com/repos/${privateRepo}/actions/workflows/${workflowId}/dispatches`;
 
-const workflowPayload = {
-  ref: "main",
-  inputs: {
-    solicitudes: JSON.stringify(data.lineas),
-  },
-};
+const results = [];
 
-const wfRes = await fetch(workflowUrl, {
-  method: "POST",
-  headers: {
-    Authorization: `Bearer ${token}`,
-    Accept: "application/vnd.github+json",
-    "Content-Type": "application/json",
-  },
-  body: JSON.stringify(workflowPayload),
-});
+for (const linea of data.lineas) {
+  const payload = {
+    ref: "main",
+    inputs: {
+      linea_nombre: linea.nombre,
+      foto_posicion: linea.foto,
+    },
+  };
 
-if (!wfRes.ok) {
-  const text = await wfRes.text();
-  throw new Error("Error al activar el workflow: " + text);
+  const wfRes = await fetch(workflowUrl, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${token}`,
+      Accept: "application/vnd.github+json",
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(payload),
+  });
+
+  if (!wfRes.ok) {
+    const text = await wfRes.text();
+    throw new Error(`Error al activar workflow para ${linea.nombre}: ${text}`);
+  }
+
+  results.push(`Workflow activado correctamente para ${linea.nombre}`);
 }
 
 // ======================
@@ -123,8 +128,7 @@ return {
   statusCode: 200,
   body: JSON.stringify({
     success: true,
-    message: "Solicitudes enviadas correctamente y workflow activado.",
-    nuevasEntradas,
+    message: results.join(" | "),
   }),
 };
 ```
@@ -136,5 +140,6 @@ statusCode: 500,
 body: JSON.stringify({ success: false, message: err.message }),
 };
 }
-};
+}
+
 
