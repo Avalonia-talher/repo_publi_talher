@@ -1,103 +1,36 @@
 
-
 <!DOCTYPE html>
-
 <html lang="es">
 <head>
 <meta charset="UTF-8">
 <title>Solicitud de Informe</title>
 <style>
-  body { 
-    font-family: Arial, sans-serif; 
-    background-color: #f2f2f2; 
-    margin: 20px; 
-  }
-
-h2 { color: #333; }
-
-#numLineas, button {
-font-size: 18px;
-padding: 8px 12px;
-margin-right: 10px;
-}
-
-.linea-input {
-background-color: #fff;
-border: 2px solid #4CAF50;
-border-radius: 10px;
-padding: 15px;
-margin-bottom: 15px;
-box-shadow: 2px 2px 8px rgba(0,0,0,0.1);
-}
-
-.linea-input label {
-display: block;
-font-weight: bold;
-margin-top: 10px;
-font-size: 16px;
-}
-
-.linea-input input[type="text"],
-.linea-input select {
-font-size: 16px;
-padding: 8px;
-width: 100%;
-margin-top: 5px;
-border-radius: 5px;
-border: 1px solid #ccc;
-box-sizing: border-box;
-}
-
-.warning {
-color: #d8000c;
-background-color: #ffbaba;
-padding: 8px;
-border-radius: 5px;
-font-weight: bold;
-margin-bottom: 10px;
-}
-
-#lineasContainer {
-margin-top: 20px;
-}
-
-#enviarBtn {
-font-size: 18px;
-padding: 10px 15px;
-background-color: #4CAF50;
-color: white;
-border: none;
-border-radius: 8px;
-cursor: pointer;
-}
-
-#enviarBtn:disabled {
-background-color: #9E9E9E;
-cursor: not-allowed;
-}
-
-#estado {
-margin-top: 15px;
-font-weight: bold;
-font-size: 16px;
-}
-
-#estado.success { color: green; }
-#estado.error { color: red; } </style>
-
+  body { font-family: Arial, sans-serif; background-color: #f2f2f2; margin: 20px; }
+  h2 { color: #333; }
+  #numLineas, button { font-size: 18px; padding: 8px 12px; margin-right: 10px; }
+  .linea-input { background-color: #fff; border: 2px solid #4CAF50; border-radius: 10px; padding: 15px; margin-bottom: 15px; box-shadow: 2px 2px 8px rgba(0,0,0,0.1); }
+  .linea-input label { display: block; font-weight: bold; margin-top: 10px; font-size: 16px; }
+  .linea-input input[type="text"], .linea-input select { font-size: 16px; padding: 8px; width: 100%; margin-top: 5px; border-radius: 5px; border: 1px solid #ccc; box-sizing: border-box; }
+  .warning { color: #d8000c; background-color: #ffbaba; padding: 8px; border-radius: 5px; font-weight: bold; margin-bottom: 10px; }
+  #lineasContainer { margin-top: 20px; }
+  #enviarBtn { font-size: 18px; padding: 10px 15px; background-color: #4CAF50; color: white; border: none; border-radius: 8px; cursor: pointer; }
+  #enviarBtn:disabled { background-color: #9E9E9E; cursor: not-allowed; }
+  #estado { margin-top: 15px; font-weight: bold; font-size: 16px; }
+  #estado.success { color: green; }
+  #estado.error { color: red; }
+</style>
 </head>
 <body>
 
 <h2>Solicitud de Informe</h2>
 
-<p>Ingrese la cantidad de líneas para las que desea solicitar informe:</p>
+<p>Ingrese la cantidad de líneas para solicitar informe:</p>
 <input type="number" id="numLineas" min="1" max="10" value="1">
 <button onclick="generarCampos()">Generar campos</button>
 
 <div id="lineasContainer"></div>
 
 <button id="enviarBtn" onclick="enviar()">Enviar solicitud</button>
-
 <div id="estado"></div>
 
 <script>
@@ -113,7 +46,7 @@ function generarCampos() {
 
         const warning = document.createElement('p');
         warning.className = 'warning';
-        warning.textContent = `¡Es muy importante indicar correctamente el nombre de la línea!`;
+        warning.textContent = '¡Indique correctamente el nombre de la línea!';
         div.appendChild(warning);
 
         const labelNombre = document.createElement('label');
@@ -126,18 +59,13 @@ function generarCampos() {
         div.appendChild(inputNombre);
 
         const labelFoto = document.createElement('label');
-        labelFoto.textContent = `Seleccionar foto:`;
+        labelFoto.textContent = 'Seleccionar foto:';
         const selectFoto = document.createElement('select');
         selectFoto.name = `foto${i}`;
-        const option1 = document.createElement('option');
-        option1.value = 'primera';
-        option1.textContent = 'Primera';
-        const option2 = document.createElement('option');
-        option2.value = 'ultima';
-        option2.textContent = 'Última';
-        selectFoto.appendChild(option1);
-        selectFoto.appendChild(option2);
-
+        const option1 = new Option('Primera', 'primera');
+        const option2 = new Option('Última', 'ultima');
+        selectFoto.add(option1);
+        selectFoto.add(option2);
         div.appendChild(labelFoto);
         div.appendChild(selectFoto);
 
@@ -176,7 +104,7 @@ async function enviar() {
         const result = await response.json();
 
         if (result.success) {
-            estadoDiv.textContent = result.message || 'Solicitud enviada correctamente ✅';
+            estadoDiv.textContent = 'Solicitud enviada correctamente ✅';
             estadoDiv.className = 'success';
         } else {
             throw new Error(result.message || 'Error en la solicitud');
