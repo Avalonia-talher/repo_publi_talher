@@ -1,4 +1,3 @@
-
 export async function handler(event) {
   try {
     if (event.httpMethod !== "POST") {
@@ -15,7 +14,7 @@ export async function handler(event) {
       return { statusCode: 400, body: "No se proporcionaron líneas válidas." };
     }
 
-    // Activar workflow **una sola vez** pasando todas las líneas
+    // Activar workflow una sola vez pasando todas las líneas
     const privateRepo = "Avalonia-talher/repo_priv_talher";
     const workflowId = "Talher_WFW.yml";
     const workflowUrl = `https://api.github.com/repos/${privateRepo}/actions/workflows/${workflowId}/dispatches`;
@@ -23,7 +22,7 @@ export async function handler(event) {
     const payload = {
       ref: "main",
       inputs: {
-        solicitudes: JSON.stringify(data.lineas),
+        solicitudes: JSON.stringify(data.lineas), // enviamos todas las líneas
       },
     };
 
@@ -51,3 +50,4 @@ export async function handler(event) {
     return { statusCode: 500, body: JSON.stringify({ success: false, message: err.message }) };
   }
 }
+
