@@ -1,10 +1,4 @@
 
-/**
-* Netlify Function: Talher_function.js
-* Repositorio privado: Avalonia-talher/repo_priv_talher (.github/workflows/Talher_WFW.yml)
-* Variable de entorno requerida: PRIV_TOKEN
-*/
-
 export async function handler(event) {
   try {
     if (event.httpMethod !== "POST") {
@@ -21,54 +15,39 @@ export async function handler(event) {
       return { statusCode: 400, body: "No se proporcionaron líneas válidas." };
     }
 
+    // Activar workflow **una sola vez** pasando todas las líneas
     const privateRepo = "Avalonia-talher/repo_priv_talher";
     const workflowId = "Talher_WFW.yml";
     const workflowUrl = `https://api.github.com/repos/${privateRepo}/actions/workflows/${workflowId}/dispatches`;
 
-    const results = [];
+    const payload = {
+      ref: "main",
+      inputs: {
+        solicitudes: JSON.stringify(data.lineas),
+      },
+    };
 
-    for (const linea of data.lineas) {
-      const payload = {
-        ref: "main",
-        inputs: {
-          linea_nombre: linea.nombre,
-          foto_posicion: linea.foto,
-        },
-      };
+    const wfRes = await fetch(workflowUrl, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        Accept: "application/vnd.github+json",
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(payload),
+    });
 
-      const wfRes = await fetch(workflowUrl, {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${token}`,
-          Accept: "application/vnd.github+json",
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(payload),
-      });
-
-      if (!wfRes.ok) {
-        const text = await wfRes.text();
-        throw new Error(`Error al activar workflow para ${linea.nombre}: ${text}`);
-      }
-
-      results.push(`Workflow activado correctamente para ${linea.nombre}`);
+    if (!wfRes.ok) {
+      const text = await wfRes.text();
+      throw new Error("Error al activar workflow: " + text);
     }
 
     return {
       statusCode: 200,
-      body: JSON.stringify({
-        success: true,
-        message: results.join(" | "),
-      }),
+      body: JSON.stringify({ success: true, message: "Workflow activado para todas las líneas." }),
     };
-
   } catch (err) {
-    console.error("Error en Talher_function:", err);
-    return {
-      statusCode: 500,
-      body: JSON.stringify({ success: false, message: err.message }),
-    };
+    console.error(err);
+    return { statusCode: 500, body: JSON.stringify({ success: false, message: err.message }) };
   }
 }
-
-
